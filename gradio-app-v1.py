@@ -1,6 +1,3 @@
-
-
-
 import gradio as gr
 import boto3
 import uuid
