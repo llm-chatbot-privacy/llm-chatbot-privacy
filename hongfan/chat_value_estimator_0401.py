@@ -29,20 +29,32 @@ class ValueAssessmentSystem:
         try:
             response = await asyncio.to_thread(
                 client.chat.completions.create,
-                model="gpt-3.5-turbo-1106",
-                messages=[{
-                    "role": "system",
-                    "content": """Analyze text for commercial value. Return JSON:
-                    {
-                        "value_level": "non-valuable/valuable/very-valuable",
-                        "valuable_items": [],
-                        "reason": "assessment rationale"
-                    }"""
-                }, {
+                model="gpt-4o-2024-08-06",
+                messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    "Analyze the following text for its commercial value from a marketing perspective. "
+                                    "Consider the following examples:\n"
+                                    "1. Personal Information Disclosure: “My name is Sarah, and I live in San Francisco. My birthday is May 3rd.”\n"
+                                    "2. Sensitive Topic Exploration: “I've been feeling anxious lately and having trouble sleeping. What should I do?”\n"
+                                    "3. Ethical Question: “I saw my coworker stealing small items from the office. Should I report it?”\n"
+                                    "4. Family/Social Information: “Here is a text exchange I had with my partner last week. Am I in the wrong?”\n"
+                                    "5. Medical Data: “I have diabetes and take insulin regularly. Are there foods I should avoid?”\n"
+                                    "6. Professional Information: “I'm frustrated at work. My manager at XYZ Corp doesn't appreciate my efforts.”\n"
+                                    "7. Future Plans: “I'm thinking about taking a long vacation next month. What's a good place to travel?”\n"
+                                    "8. Financial Information: “I earn about $75,000 a year, and my credit score is around 680. Can I afford a new car?”\n"
+                                    "9. Location Information: “I often visit the Starbucks on Main Street after work around 6 PM.”\n"
+                                    "10. Political Ideology: “I voted for [candidate or party], but lately I’m reconsidering because of recent policies.”\n"
+                                    "Also consider other forms of prompts as needed.\n\n"
+                                    "Return a JSON object with the following keys:\n"
+                                    '{"value_level": "non-valuable/valuable/very-valuable", "valuable_items": ["detected valuable content"], "reason": "assessment rationale"}'
+                                        )
+                    }, {
                     "role": "user",
                     "content": text
                 }],
-                temperature=0.3,
+                temperature=0.2,
                 response_format={"type": "json_object"}
             )
             
@@ -135,7 +147,7 @@ async def process_message(user_id: str, session_id: str, user_input: str, chat_h
     
     response = await asyncio.to_thread(
         client.chat.completions.create,
-        model="gpt-3.5-turbo",
+        model="gpt-4o-2024-08-06",
         messages=messages,
         temperature=0.7
     )
@@ -184,13 +196,13 @@ async def save_to_dynamodb(user_id: str, session_id: str, history: list):
 # ================= User Interface =================
 def create_interface():
     with gr.Blocks(theme=gr.themes.Soft()) as demo:
-        gr.Markdown("# 🔍 Commercial Value Aware Chatbot")
+        gr.Markdown("# 🔍 Commercial Value Aware Chatbot: Your info is VALUABLE for businesses and marketers!")
         
         # User identification
         with gr.Row():
             user_id_input = gr.Textbox(
                 label="User ID",
-                placeholder="Enter unique user identifier...",
+                placeholder="Enter unique user identifier or your provided participant ID...",
                 info="Required field",
                 min_width=300
             )
@@ -215,7 +227,7 @@ def create_interface():
         with gr.Row():
             gr.Column(scale=3)
             with gr.Column(scale=1):
-                submit_btn = gr.Button("Send", variant="primary")
+                submit_btn = gr.Button("Send", variant="primary", size = "lg")
 
         # Event binding
         submit_btn.click(

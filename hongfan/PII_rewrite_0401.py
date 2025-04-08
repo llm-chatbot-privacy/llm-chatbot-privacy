@@ -69,30 +69,39 @@ async def detect_and_rewrite_pii(text):
     try:
         response = await asyncio.to_thread(
             client.chat.completions.create,
-            model="gpt-4",  # or use "gpt-3.5-turbo" if GPT-4 isn't available
+            model="gpt-4o-2024-08-06",  
             messages=[{
                 "role": "system",
-                "content": """You are a privacy protection assistant. Your task is to:
-1. Analyze the user's message for any PII (Personally Identifiable Information) including: age, address, phone numbers, email addresses, ID numbers, race, gender, income, etc.
-2. If you find PII, create a revised version of the text with the PII removed or anonymized.
-3. Then output your analysis in the exact format shown below:
-
----PII_ANALYSIS_START---
-ORIGINAL_TEXT: [paste the original text here]
-REVISED_TEXT: [paste your revised version here]
-DETECTED_PII:
-- Type: [type of PII], Content: [the specific content]
-- Type: [type of PII], Content: [the specific content]
-(list all detected PII items)
----PII_ANALYSIS_END---
-
-If no PII is detected, respond with:
----PII_ANALYSIS_START---
-ORIGINAL_TEXT: [paste the original text here]
-REVISED_TEXT: [paste the original text here]
-DETECTED_PII: None
----PII_ANALYSIS_END---
-"""
+                "content": 
+                    "You are a privacy protection assistant. Your task is to:\n"
+                    "1. Analyze the user's message for any PII (Personally Identifiable Information) such as age, address, phone numbers, email addresses, ID numbers, race, gender, income, etc.\n"
+                    "2. If you find PII, generate a revised version of the text with the PII removed or anonymized while preserving the user's intended meaning.\n"
+                    "3. Output your analysis in the exact format shown below:\n\n"
+                    "---PII_ANALYSIS_START---\n"
+                    "ORIGINAL_TEXT: [paste the original text here]\n"
+                    "REVISED_TEXT: [paste your revised version here]\n"
+                    "DETECTED_PII:\n"
+                    "- Type: [type of PII], Content: [the specific content]\n"
+                    "- Type: [type of PII], Content: [the specific content]\n"
+                    "(list all detected PII items)\n"
+                    "---PII_ANALYSIS_END---\n\n"
+                    "If no PII is detected, respond with:\n"
+                    "---PII_ANALYSIS_START---\n"
+                    "ORIGINAL_TEXT: [paste the original text here]\n"
+                    "REVISED_TEXT: [paste the original text here]\n"
+                    "DETECTED_PII: None\n"
+                    "---PII_ANALYSIS_END---\n\n"
+                    "Some concrete privacy or sensitive information category examples for your reference:\n"
+                    "Personal Information Disclosure: “My name is Sarah, and I live in San Francisco. My birthday is May 3rd.”\n"
+                    "Sensitive Topic Exploration: “I've been feeling anxious lately and having trouble sleeping. What should I do?”\n"
+                    "Ethical Question: “I saw my coworker stealing small items from the office. Should I report it?”\n"
+                    "Family/Social Information: “Here is a text exchange I had with my partner last week. Am I in the wrong?”\n"
+                    "Medical Data: “I have diabetes and take insulin regularly. Are there foods I should avoid?”\n"
+                    "Professional Information: “I'm frustrated at work. My manager at XYZ Corp doesn't appreciate my efforts.”\n"
+                    "Future Plans: “I'm thinking about taking a long vacation next month. What's a good place to travel?”\n"
+                    "Financial Information: “I earn about $75,000 a year, and my credit score is around 680. Can I afford a new car?”\n"
+                    "Location Information: “I often visit the Starbucks on Main Street after work around 6 PM.”\n"
+                    "Political Ideology: “I voted for [candidate or party], but lately I’m reconsidering because of recent policies.”"
             }, {
                 "role": "user",
                 "content": text
@@ -305,7 +314,7 @@ async def handle_rewrite_choice(user_id, session_id, choice, chat_history):
     # Get response from LLM
     response = await asyncio.to_thread(
         client.chat.completions.create,
-        model="gpt-3.5-turbo",
+        model="gpt-4o-2024-08-06",
         messages=messages,
         temperature=0.7
     )
@@ -333,7 +342,7 @@ async def handle_rewrite_choice(user_id, session_id, choice, chat_history):
     return convert_to_gradio_format(storage_history), session_id
 # ================= Gradio Interface =================
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 🔒 Privacy-Conscious Chatbot")
+    gr.Markdown("# 🔒 Privacy-Conscious Chatbot that rewrite your message with privacy / sensitive info.")
     
     with gr.Row():
         user_id_input = gr.Textbox(label="User ID", placeholder="Enter unique identifier...")
@@ -352,7 +361,6 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     
     with gr.Row():
         submit_btn = gr.Button("Send", variant="primary")
-        clear_btn = gr.Button("Clear Chat", variant="secondary")
     
     with gr.Row(visible=False) as rewrite_panel:
         with gr.Column():
@@ -426,18 +434,18 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     )
     
     # Clear chat button
-    clear_btn.click(
-        lambda: ([], str(uuid.uuid4())),
-        outputs=[chatbot, session_id]
-    ).then(
-        lambda: gr.update(visible=False),
-        None,
-        [rewrite_panel]
-    ).then(
-        lambda: gr.update(interactive=True, placeholder="Type your message here..."),
-        None,
-        [msg]
-    )
+    # clear_btn.click(
+    #     lambda: ([], str(uuid.uuid4())),
+    #     outputs=[chatbot, session_id]
+    # ).then(
+    #     lambda: gr.update(visible=False),
+    #     None,
+    #     [rewrite_panel]
+    # ).then(
+    #     lambda: gr.update(interactive=True, placeholder="Type your message here..."),
+    #     None,
+    #     [msg]
+    # )
     
     # Update UI when chat history changes
     chatbot.change(

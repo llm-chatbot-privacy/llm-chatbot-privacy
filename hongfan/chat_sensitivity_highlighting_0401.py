@@ -9,26 +9,26 @@ import asyncio
 from dotenv import load_dotenv
 import hashlib
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
-# 初始化 AWS DynamoDB
+# Initialize AWS DynamoDB
 session = boto3.Session(region_name=os.getenv("AWS_REGION"))
 dynamodb_resource = session.resource("dynamodb")
 table = dynamodb_resource.Table("chat_history")
 
-# 初始化 OpenAI 客户端
+# Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ================= 增强型数据结构 =================
+# ================= Enhanced Data Structures =================
 def convert_to_gradio_format(history):
-    """将存储格式转换为Gradio显示格式"""
+    """Convert storage format to Gradio display format"""
     gradio_history = []
     for msg in history:
         if msg["role"] == "user":
             display_content = msg["content"]
             if "sensitivity" in msg:
-                display_content += f"\n🔒敏感级别: {msg['sensitivity']['level'].upper()}"
+                display_content += f"\n🔒Sensitivity Level: {msg['sensitivity']['level'].upper()}"
             gradio_history.append((display_content, None))
         elif msg["role"] == "assistant":
             if gradio_history and gradio_history[-1][1] is None:
@@ -40,13 +40,13 @@ def convert_to_gradio_format(history):
     return gradio_history
 
 def convert_to_storage_format(gradio_history):
-    """将Gradio格式转换为存储格式"""
+    """Convert Gradio format to storage format"""
     storage_history = []
     for user_msg, bot_msg in gradio_history:
         if user_msg:
             sensitivity = {}
-            if "🔒敏感级别:" in user_msg:
-                content, sensitivity_part = user_msg.split("\n🔒敏感级别:")
+            if "🔒Sensitivity Level:" in user_msg:
+                content, sensitivity_part = user_msg.split("\n🔒Sensitivity Level:")
                 sensitivity = {"level": sensitivity_part.strip().lower()}
             else:
                 content = user_msg
@@ -66,7 +66,7 @@ def convert_to_storage_format(gradio_history):
             })
     return storage_history
 
-# ================= 敏感信息处理模块 =================
+# ================= Privacy Handling Module =================
 class PrivacyManager:
     def __init__(self):
         self.pending_actions = {}  # {session_id: {message: ..., detection: ...}}
@@ -80,15 +80,25 @@ async def detect_sensitive_info(text):
     try:
         response = await asyncio.to_thread(
             client.chat.completions.create,
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4o-2024-08-06",
             messages=[{
                 "role": "system",
-                "content": """分析文本敏感信息，返回JSON格式：
-                {
-                    "sensitivity_level": "non-sensitive/sensitive/very-sensitive",
-                    "flagged_items": ["检测到的敏感内容"],
-                    "reason": "分类依据说明"
-                }"""
+                "content":( 
+                    "Analyze text for sensitive information "
+                    "Consider the following examples:\n"
+                    "1. Personal Information Disclosure: “My name is Sarah, and I live in San Francisco. My birthday is May 3rd.”\n"
+                            "2. Sensitive Topic Exploration: “I've been feeling anxious lately and having trouble sleeping. What should I do?”\n"
+                            "3. Ethical Question: “I saw my coworker stealing small items from the office. Should I report it?”\n"
+                            "4. Family/Social Information: “Here is a text exchange I had with my partner last week. Am I in the wrong?”\n"
+                            "5. Medical Data: “I have diabetes and take insulin regularly. Are there foods I should avoid?”\n"
+                            "6. Professional Information: “I'm frustrated at work. My manager at XYZ Corp doesn't appreciate my efforts.”\n"
+                            "7. Future Plans: “I'm thinking about taking a long vacation next month. What's a good place to travel?”\n"
+                            "8. Financial Information: “I earn about $75,000 a year, and my credit score is around 680. Can I afford a new car?”\n"
+                            "9. Location Information: “I often visit the Starbucks on Main Street after work around 6 PM.”\n"
+                            "10. Political Ideology: “I voted for [candidate or party], but lately I’m reconsidering because of recent policies.”\n\n"
+                    "Return a JSON object with the following keys:\n"
+                    '{"sensitivity_level": "non-sensitive/sensitive/very-sensitive", "flagged_items": ["detected sensitive content"], "reason": "classification rationale"}'
+              )
             }, {
                 "role": "user", 
                 "content": text
@@ -104,12 +114,12 @@ async def detect_sensitive_info(text):
             "reason": result.get("reason", "")
         }
     except Exception as e:
-        print(f"敏感信息检测失败: {e}")
+        print(f"Sensitivity detection failed: {e}")
         return {"level": "non-sensitive", "items": [], "reason": ""}
 
-# ================= 增强版数据库操作 =================
+# ================= Enhanced Database Operations =================
 async def save_to_dynamodb(user_id, session_id, history, sensitivity_level=None, user_action=None):
-    """保存完整对话记录和隐私操作"""
+    """Save complete conversation history with privacy actions"""
     data = {
         "user_id": user_id,
         "session_id": session_id,
@@ -125,12 +135,12 @@ async def save_to_dynamodb(user_id, session_id, history, sensitivity_level=None,
     
     try:
         await asyncio.to_thread(table.put_item, Item=data)
-        print("✅ 数据库记录已更新:", json.dumps(data, indent=2))
+        print("✅ Database record updated:", json.dumps(data, indent=2))
     except Exception as e:
-        print("❌ 数据库保存失败:", str(e))
+        print("❌ Database save failed:", str(e))
         raise
 
-# ================= 核心聊天逻辑 =================
+# ================= Core Chat Logic =================
 async def privacy_aware_chatbot(user_id, session_id, user_input, chat_history):
     storage_history = convert_to_storage_format(chat_history)
     
@@ -156,7 +166,7 @@ async def privacy_aware_chatbot(user_id, session_id, user_input, chat_history):
         
         warning_msg = {
             "role": "system",
-            "content": f"⚠️ 检测到 {detection['level']} 级敏感信息: {detection['reason']}",
+            "content": f"⚠️ Detected {detection['level']} level sensitive information: {detection['reason']}",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
@@ -169,12 +179,12 @@ async def privacy_aware_chatbot(user_id, session_id, user_input, chat_history):
         )
         return convert_to_gradio_format(storage_history), session_id
     
-    messages = [{"role": "system", "content": "你是一个有用的助手"}] + storage_history
+    messages = [{"role": "system", "content": "You are a helpful assistant"}] + storage_history
     messages.append(user_message)
     
     response = await asyncio.to_thread(
         client.chat.completions.create,
-        model="gpt-3.5-turbo",
+        model="gpt-4o-2024-08-06",
         messages=messages,
         temperature=0.7
     )
@@ -205,7 +215,7 @@ async def handle_user_choice(user_id, session_id, choice, chat_history):
     
     placeholder = {
         "role": "system",
-        "content": f"[用户选择{'删除' if choice == 'remove' else '保留'}敏感信息]",
+        "content": f"[User chose to {'remove' if choice == 'remove' else 'keep'} sensitive information]",
         "action_record": action_record,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
@@ -234,37 +244,43 @@ async def handle_user_choice(user_id, session_id, choice, chat_history):
     del privacy_manager.pending_actions[session_id]
     return convert_to_gradio_format(new_history), session_id
 
-# ================= Gradio界面 =================
+# ================= Gradio Interface =================
+
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 🔒 隐私保护聊天机器人")
+    gr.Markdown("# 🔒 Privacy-Aware Chatbot: Chat Content Sensitive Info Highlighter")
     
     with gr.Row():
-        user_id_input = gr.Textbox(label="用户ID", placeholder="输入唯一标识...")
+        user_id_input = gr.Textbox(label="User ID", placeholder="Enter unique identifier OR your provided participant ID...")
         session_id = gr.State()
     
     chatbot = gr.Chatbot(
-        label="对话记录",
+        label="Conversation History",
         bubble_full_width=False,
         height=500
     )
     
     msg = gr.Textbox(
-        label="输入消息",
+        label="Input Message",
+        placeholder="Type your message here...",
         lines=2
     )
     
+    # Modified button layout section
     with gr.Row():
-        submit_btn = gr.Button("发送", variant="primary")
-        clear_btn = gr.Button("清空对话", variant="secondary")
+        # Empty element to push button to right
+        gr.Column(scale=3) 
+        with gr.Column(scale=1):
+            submit_btn = gr.Button("Send", variant="primary", size="lg")
     
+    # Rest of the code remains the same...
     with gr.Row(visible=False) as action_panel:
         choice = gr.Radio(
             ["remove", "keep"], 
-            label="敏感信息操作选择",
-            info="请确认如何处理检测到的敏感信息",
+            label="Sensitive Information Handling: \n Do you want to keep or remove your detected sensitive info?",
+            info="Confirm how to handle detected sensitive information",
             interactive=True
         )
-        confirm_btn = gr.Button("确认操作", variant="stop")
+        confirm_btn = gr.Button("Confirm Action", variant="stop")
 
     def toggle_action_panel(history):
         try:
@@ -290,11 +306,6 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         toggle_action_panel,
         [chatbot],
         [action_panel]
-    )
-    
-    clear_btn.click(
-        lambda: ([], str(uuid.uuid4())),
-        outputs=[chatbot, session_id]
     )
 
 if __name__ == "__main__":

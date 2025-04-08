@@ -38,14 +38,14 @@ CATEGORY_MAPPING = {
 # Pattern-based sensitive info detection
 SENSITIVE_PATTERNS = {
     "ssn": (r"\b(?:\d{3}-\d{2}-\d{4}|\d{9})\b", "Personal Identity", 10),
-    "credit_card": (r"\b(?:\d{4}[- ]?){3}\d{4}\b", "Financial/Income/Tax", 9),
-    "phone": (r"\b(?:\+\d{1,2}\s?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b", "Personal Identity", 7),
-    "email": (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "Personal Identity", 6),
-    "address": (r"\b\d+\s+[A-Za-z0-9\s,.]+(?:Avenue|Ave|Street|St|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Terrace|Ter)[,.]?\s+(?:[A-Za-z]+[,.]?\s+)?(?:[A-Za-z]{2}[,.]?\s+)?(?:\d{5}(?:-\d{4})?)?", "Location/Address", 8),
-    "dob": (r"\b(?:0[1-9]|1[0-2])[/.-](?:0[1-9]|[12][0-9]|3[01])[/.-](?:19|20)\d{2}\b", "Personal Identity", 8),
-    "passport": (r"\b[A-Z]{1,2}[0-9]{6,9}\b", "Personal Identity", 9),
-    "bank_account": (r"\b\d{10,12}\b", "Financial/Income/Tax", 8),
-    "routing_number": (r"\b\d{9}\b", "Financial/Income/Tax", 8)
+    "credit_card": (r"\b(?:\d{4}[- ]?){3}\d{4}\b", "Financial/Income/Tax", 10),
+    "phone": (r"\b(?:\+\d{1,2}\s?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b", "Personal Identity", 10),
+    "email": (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "Personal Identity", 10),
+    "address": (r"\b\d+\s+[A-Za-z0-9\s,.]+(?:Avenue|Ave|Street|St|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Terrace|Ter)[,.]?\s+(?:[A-Za-z]+[,.]?\s+)?(?:[A-Za-z]{2}[,.]?\s+)?(?:\d{5}(?:-\d{4})?)?", "Location/Address", 10),
+    "dob": (r"\b(?:0[1-9]|1[0-2])[/.-](?:0[1-9]|[12][0-9]|3[01])[/.-](?:19|20)\d{2}\b", "Personal Identity", 10),
+    "passport": (r"\b[A-Z]{1,2}[0-9]{6,9}\b", "Personal Identity", 10),
+    "bank_account": (r"\b\d{10,12}\b", "Financial/Income/Tax", 10),
+    "routing_number": (r"\b\d{9}\b", "Financial/Income/Tax", 10)
 }
 
 def convert_to_gradio_format(internal_history):
@@ -128,17 +128,28 @@ async def detect_sensitive_info_ai(text):
     """
     try:
         response = await async_openai_client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4o-2024-08-06",
             messages=[
                 {
                     "role": "system", 
                     "content": (
-                        "You are a privacy analysis system. Analyze the text for sensitive personal information. "
-                        "Respond in JSON format with an array of detected sensitive items. "
+                        "Analyze the following text and rate its sensitivity on a scale from 1 (not sensitive) to 5 (extremely sensitive). "
+                        "Return the score as a JSON object with the key 'score'."
                         "For each item, provide: 'type' (specific type of information), 'category' (one of: Financial/Income/Tax, "
                         "Personal Identity, Personal History, Family Information, Location/Address, Social Relationships, "
                         "Personal Preferences, Health Information, Other), 'score' (sensitivity from 1-10, where 10 is "
                         "extremely sensitive), and 'reason' (brief explanation)."
+                        "Consider the following examples:\n"
+                        "Personal Information Disclosure: “My name is Sarah, and I live in San Francisco. My birthday is May 3rd.”\n"
+                        "Sensitive Topic Exploration: “I've been feeling anxious lately and having trouble sleeping. What should I do?”\n"
+                        "Ethical Question: “I saw my coworker stealing small items from the office. Should I report it?”\n"
+                        "Family/Social Information: “Here is a text exchange I had with my partner last week. Am I in the wrong?”\n"
+                        "Medical Data: “I have diabetes and take insulin regularly. Are there foods I should avoid?”\n"
+                        "Professional Information: “I'm frustrated at work. My manager at XYZ Corp doesn't appreciate my efforts.”\n"
+                        "Future Plans: “I'm thinking about taking a long vacation next month. What's a good place to travel?”\n"
+                        "Financial Information: “I earn about $75,000 a year, and my credit score is around 680. Can I afford a new car?”\n"
+                        "Location Information: “I often visit the Starbucks on Main Street after work around 6 PM.”\n"
+                        "Political Ideology: “I voted for [candidate or party], but lately I’m reconsidering because of recent policies.”\n"
                     )
                 },
                 {"role": "user", "content": text}
@@ -168,17 +179,18 @@ async def detect_sensitive_info(text, privacy_settings):
         dict: Detection results with detected items and threshold info
     """
     # First use pattern matching for common sensitive info
-    pattern_detected = detect_sensitive_info_patterns(text)
+    # pattern_detected = detect_sensitive_info_patterns(text)
     
     # Then use AI for more nuanced detection
     ai_detected = await detect_sensitive_info_ai(text)
     
     # Combine results (prioritize pattern matches if duplicates)
-    pattern_types = set(item["type"] for item in pattern_detected)
-    combined_detected = pattern_detected + [
-        item for item in ai_detected 
-        if not any(item.get("type", "") == ptype for ptype in pattern_types)
-    ]
+    # pattern_types = set(item["type"] for item in pattern_detected)
+    # combined_detected = pattern_detected + [
+    #     item for item in ai_detected 
+    #     if not any(item.get("type", "") == ptype for ptype in pattern_types)
+    # ]
+    combined_detected = ai_detected
     
     # Check which items exceed thresholds
     exceeded_items = []
@@ -313,7 +325,7 @@ async def privacy_aware_chatbot(user_id, session_id, user_input, internal_histor
     
     try:
         response = await async_openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-2024-08-06",
             messages=messages,
             temperature=0.7
         )
@@ -345,25 +357,26 @@ async def privacy_aware_chatbot(user_id, session_id, user_input, internal_histor
     
     return convert_to_gradio_format(internal_history), session_id, internal_history, privacy_settings
 
+
 def create_privacy_sliders():
     """Create privacy slider components"""
     with gr.Row():
         sliders = []
         for category_name, category_id in CATEGORY_MAPPING.items():
             if category_id != "other":
-                default_val = 7 if category_id in ["identity", "financial", "health", "location"] else 5
-                sliders.append(gr.Slider(0, 10, value=default_val, label=f"{category_name} Sensitivity", interactive=True))
+                default_val = 3
+                sliders.append(gr.Slider(0, 5, value=default_val, label=f"{category_name} Sensitivity", interactive=True))
         return sliders
 
 # ================= Gradio Interface =================
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 🔒 Privacy-Aware Chatbot")
+    gr.Markdown("# 🔒 Privacy-Aware Chatbot: Determine how much you care about sharing different private information to the chatbot.")
     
     # Privacy Settings Section
     with gr.Row(visible=True) as setup_panel:
         with gr.Column():
             user_id_input = gr.Textbox(label="User ID", placeholder="Enter a unique identifier...")
-            gr.Markdown("### Privacy Sensitivity Thresholds\nSet how sensitive you want the bot to be for each category. Higher values allow more sensitive information.")
+            gr.Markdown("### Privacy Sensitivity Thresholds\nSet how sensitive you want the bot to be for each category. 🔒 Higher values allow more sensitive information. ⚠️ Example: 5 means you don't mind sharing this information to the chatbot.")
             sliders = create_privacy_sliders()
             init_btn = gr.Button("Initialize Privacy Settings", variant="primary")
     
