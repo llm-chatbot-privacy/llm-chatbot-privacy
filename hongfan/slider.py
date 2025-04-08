@@ -36,17 +36,45 @@ CATEGORY_MAPPING = {
 }
 
 # Pattern-based sensitive info detection
+# SENSITIVE_PATTERNS = {
+#     "ssn": (r"\b(?:\d{3}-\d{2}-\d{4}|\d{9})\b", "Personal Identity", 10),
+#     "credit_card": (r"\b(?:\d{4}[- ]?){3}\d{4}\b", "Financial/Income/Tax", 9),
+#     "phone": (r"\b(?:\+\d{1,2}\s?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b", "Personal Identity", 7),
+#     "email": (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "Personal Identity", 6),
+#     "address": (r"\b\d+\s+[A-Za-z0-9\s,.]+(?:Avenue|Ave|Street|St|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Terrace|Ter)[,.]?\s+(?:[A-Za-z]+[,.]?\s+)?(?:[A-Za-z]{2}[,.]?\s+)?(?:\d{5}(?:-\d{4})?)?", "Location/Address", 8),
+#     "dob": (r"\b(?:0[1-9]|1[0-2])[/.-](?:0[1-9]|[12][0-9]|3[01])[/.-](?:19|20)\d{2}\b", "Personal Identity", 8),
+#     "passport": (r"\b[A-Z]{1,2}[0-9]{6,9}\b", "Personal Identity", 9),
+#     "bank_account": (r"\b\d{10,12}\b", "Financial/Income/Tax", 8),
+#     "routing_number": (r"\b\d{9}\b", "Financial/Income/Tax", 8)
+# }
+
 SENSITIVE_PATTERNS = {
     "ssn": (r"\b(?:\d{3}-\d{2}-\d{4}|\d{9})\b", "Personal Identity", 10),
-    "credit_card": (r"\b(?:\d{4}[- ]?){3}\d{4}\b", "Financial/Income/Tax", 9),
-    "phone": (r"\b(?:\+\d{1,2}\s?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b", "Personal Identity", 7),
-    "email": (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "Personal Identity", 6),
-    "address": (r"\b\d+\s+[A-Za-z0-9\s,.]+(?:Avenue|Ave|Street|St|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Terrace|Ter)[,.]?\s+(?:[A-Za-z]+[,.]?\s+)?(?:[A-Za-z]{2}[,.]?\s+)?(?:\d{5}(?:-\d{4})?)?", "Location/Address", 8),
-    "dob": (r"\b(?:0[1-9]|1[0-2])[/.-](?:0[1-9]|[12][0-9]|3[01])[/.-](?:19|20)\d{2}\b", "Personal Identity", 8),
-    "passport": (r"\b[A-Z]{1,2}[0-9]{6,9}\b", "Personal Identity", 9),
-    "bank_account": (r"\b\d{10,12}\b", "Financial/Income/Tax", 8),
-    "routing_number": (r"\b\d{9}\b", "Financial/Income/Tax", 8)
+    "credit_card": (r"\b(?:\d{4}[- ]?){3}\d{4}\b", "Financial/Income/Tax", 10),
+    "phone": (r"\b(?:\+\d{1,2}\s?)?\(?\d{3}\)?[- ]?\d{3}[- ]?\d{4}\b", "Personal Identity", 10),
+    "email": (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "Personal Identity", 10),
+    "address": (r"\b\d+\s+[A-Za-z0-9\s,.]+(?:Avenue|Ave|Street|St|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Place|Pl|Terrace|Ter)[,.]?\s+(?:[A-Za-z]+[,.]?\s+)?(?:[A-Za-z]{2}[,.]?\s+)?(?:\d{5}(?:-\d{4})?)?", "Location/Address", 10),
+    "dob": (r"\b(?:0[1-9]|1[0-2])[/.-](?:0[1-9]|[12][0-9]|3[01])[/.-](?:19|20)\d{2}\b", "Personal Identity", 10),
+    "passport": (r"\b[A-Z]{1,2}[0-9]{6,9}\b", "Personal Identity", 10),
+    "bank_account": (r"\b\d{10,12}\b", "Financial/Income/Tax", 10),
+    "routing_number": (r"\b\d{9}\b", "Financial/Income/Tax", 10),
+    # New additional patterns based on examples:
+    "name": (r"\bMy name is\s+([A-Za-z]+)\b", "Personal Identity", 10),
+    "city": (r"\bI live in\s+([A-Za-z\s]+)\b", "Location/Address", 10),
+    "birthday": (r"\bMy birthday is\s+([A-Za-z0-9, ]+)\b", "Personal Identity", 10),
+    "mental_health": (r"\b(feeling anxious|trouble sleeping|depressed|stressed)\b", "Health Information", 10),
+    "ethical_concern": (r"\b(report|stealing)\b", "Other", 10),
+    "relationship_info": (r"\b(text exchange with (my partner|wife|husband))\b", "Social Relationships", 10),
+    "medical_condition": (r"\b(diabetes|insulin)\b", "Health Information", 10),
+    "workplace_issue": (r"\b(frustrated at work|manager at\s+[A-Za-z\s]+)\b", "Personal History", 10),
+    "vacation_plans": (r"\b(taking a long vacation|planning a vacation|travel to)\b", "Personal Preferences", 10),
+    "income": (r"\b\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?\b", "Financial/Income/Tax", 10),
+    "credit_score": (r"\bcredit score\s+(?:is\s+)?\d+\b", "Financial/Income/Tax", 10),
+    "regular_location": (r"\b(visit|frequently go to)\s+[A-Za-z\s]+\b", "Location/Address", 10),
+    "schedule_info": (r"\b(after work|around \d+\s*PM)\b", "Personal History", 10),
+    "political_view": (r"\b(voted for|support|oppose)\s+\S+\b", "Other", 10),
 }
+
 
 def convert_to_gradio_format(internal_history):
     """
@@ -131,7 +159,7 @@ async def detect_sensitive_info_ai(text):
         "city": ("City of residence (e.g. 'I live in San Francisco')", "Location/Address", 10),
         "birthday": ("Birth date (e.g. 'My birthday is May 3rd')", "Personal Identity", 10),
         "mental_health": ("Mental health information (e.g. 'feeling anxious', 'trouble sleeping')", "Health Information", 10),
-        "ethical_concern": ("Workplace ethical issues (e.g. 'coworker stealing')", "Other", 7),
+        "ethical_concern": ("Workplace ethical issues (e.g. 'coworker stealing')", "Other", 10),
         "relationship_info": ("Personal relationship details (e.g. 'text exchange with partner')", "Social Relationships", 10),
         "medical_condition": ("Medical conditions (e.g. 'diabetes', 'insulin')", "Health Information", 10),
         "workplace_issue": ("Work-related concerns (e.g. 'frustrated at work')", "Personal History", 10),
@@ -388,9 +416,10 @@ def create_privacy_sliders():
         sliders = []
         for category_name, category_id in CATEGORY_MAPPING.items():
             if category_id != "other":
-                default_val = 7 if category_id in ["identity", "financial", "health", "location"] else 5
+                default_val = 5 if category_id in ["identity", "financial", "health", "location"] else 5
                 sliders.append(gr.Slider(0, 10, value=default_val, label=f"{category_name} Sensitivity", interactive=True))
         return sliders
+
 
 # ================= Gradio Interface =================
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
@@ -400,10 +429,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     with gr.Row(visible=True) as setup_panel:
         with gr.Column():
             user_id_input = gr.Textbox(label="User ID", placeholder="Enter a unique identifier...")
-            gr.Markdown("### Privacy Sensitivity Thresholds\nSet how sensitive you want the bot to be for each category. Higher values allow more sensitive information. 🔒 For example, 1 means you don't want to share it to anyone; 10 means you are ok with this info on billboard next to I-5.")
+            gr.Markdown("### Privacy Sensitivity Thresholds\nSet how sensitive you want the bot to be for each category. Higher values allow more sensitive information.\n 🔒 For example, 0 means you would share it to NO ONE; 🔒10 means you can share it to ANYONE")
             sliders = create_privacy_sliders()
             init_btn = gr.Button("Initialize Privacy Settings", variant="primary")
-    
+
     # Chat Interface
     with gr.Row(visible=False) as chat_panel:
         with gr.Column():
