@@ -420,7 +420,6 @@ def create_privacy_sliders():
                 sliders.append(gr.Slider(0, 10, value=default_val, label=f"{category_name} Sensitivity", interactive=True))
         return sliders
 
-
 # ================= Gradio Interface =================
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🔒 Privacy-Aware Chatbot: Self define privacy threshold")
