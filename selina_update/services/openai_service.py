@@ -1,10 +1,12 @@
-
+import os
 import openai
+from dotenv import load_dotenv
+load_dotenv()
 
 _api_key = None
 
 def get_api_key():
-    return _api_key
+    return _api_key or os.getenv("OPENAI_API_KEY")
 
 def set_api_key(key):
     global _api_key
@@ -13,11 +15,12 @@ def set_api_key(key):
     return "✅ API key set."
 
 def chat_with_gpt4(user_message, mode, principle):
-    if not _api_key:
+    key = get_api_key()
+    if not key:
         return "⚠️ Please provide an API key first."
     try:
         from openai import OpenAI
-        client = OpenAI(api_key=_api_key)
+        client = OpenAI(api_key=key)
         mode_prompts = {
             "private": "You are a confidential assistant. Do not store or use this data beyond this session.",
             "personalized": "You may refer to past conversations to personalize your response, but do not use the data to train models.",

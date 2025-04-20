@@ -7,7 +7,6 @@ import gradio as gr
 from components.ChatInput import chat_input_section
 from components.ChatMessage import render_messages
 from components.ChatSidebar import chat_sidebar
-from components.ApiKeyModal import api_key_section
 from components.DataHandlingModal import data_handling_selector
 from components.PrincipleSelector import principle_selector
 from components.state import (
@@ -127,7 +126,6 @@ with gr.Blocks() as demo:
             data_radio, start_btn, info_box = data_handling_selector()
             principle_radio, principle_desc = principle_selector()
             principle_confirm = gr.Button("Confirm Advisory Role")
-            key_input, key_btn, key_status = api_key_section()
             user_id_input = gr.Textbox(label="User ID", placeholder="Enter your user ID", value="test_user")
             user_id_confirm = gr.Button("Set User ID")
             user_id_status = gr.Markdown()
@@ -140,7 +138,6 @@ with gr.Blocks() as demo:
                 inputs=principle_radio,
                 outputs=principle_desc)
             start_btn.click(start_chat, inputs=data_radio, outputs=chat_display)
-            key_btn.click(fn=lambda k: "✅ Key set" if k else "❌ No key", inputs=key_input, outputs=key_status)
             user_id_confirm.click(fn=set_user_id, inputs=user_id_input, outputs=user_id_status)
 
 if __name__ == "__main__":
